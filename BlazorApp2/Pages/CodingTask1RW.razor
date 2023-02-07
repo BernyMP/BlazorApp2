@@ -1,0 +1,174 @@
+@page "/codingTask1RW"
+@using BlazorApp2.Data;
+@using BlazorApp2.Shared;
+@using System.Text.Json.Serialization
+@using System.Text.Json
+<PageTitle>Coding Task #1 ReWrite</PageTitle>
+
+<h1>Coding Task #1 ReWrite</h1>
+<p>
+    In this task we are going to calculate and display the temperature spread for each date.
+    As well as finding the date(s) with the smallest temperature spread and the date(s)
+    with the largest temperature spread.
+</p>
+
+<p>
+    I thought it would be fun to make the excel data in json file and call an endpoint containing the data.
+    <br/>Here is the table because might as well...
+</p>
+<br/>
+
+<h4>The Date(s) with the Largest Temperature Spread are: </h4>
+
+@if (datesLargestTempSpread == null)
+{
+    <p>
+        <em>Loading data...</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Maximum</th>
+            <th>Minimum</th>
+            <th>Temperature Spread</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var date in datesLargestTempSpread)
+        {
+            <tr>
+                <td>@date.Date</td>
+                <td>@date.Maximum</td>
+                <td>@date.Minimum</td>
+                <td>@date.TempSpread</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+<br/>
+<h4>The Date(s) with the Smallest Temperature Spread are: </h4>
+@if (datesSmallestTempSpread == null)
+{
+    <p>
+        <em>Loading data...</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Maximum</th>
+            <th>Minimum</th>
+            <th>Temperature Spread</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var date in datesSmallestTempSpread)
+        {
+            <tr>
+                <td>@date.Date</td>
+                <td>@date.Maximum</td>
+                <td>@date.Minimum</td>
+                <td>@date.TempSpread</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+<br/>
+<h4>Table from Excel: </h4>
+@if (data == null)
+{
+    <p>
+        <em>Loading data...</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Maximum</th>
+            <th>Minimum</th>
+            <th>Temperature Spread</th>
+            <th>Average</th>
+            <th>Departure</th>
+            <th>Hdd</th>
+            <th>Cdd</th>
+            <th>Precipitation</th>
+            <th>New Snow</th>
+            <th>Snow Depth</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var date in data)
+        {
+            <tr>
+                <td>@date.Date</td>
+                <td>@date.Maximum</td>
+                <td>@date.Minimum</td>
+                <td>@date.TempSpread</td>
+                <td>@date.Average</td>
+                <td>@date.Departure</td>
+                <td>@date.Hdd</td>
+                <td>@date.Cdd</td>
+                <td>@date.Precipitation</td>
+                <td>@date.NewSnow</td>
+                <td>@date.SnowDepth</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private ClimatologicalData[]? data;
+    private List<ClimatologicalData>? datesSmallestTempSpread;
+    private List<ClimatologicalData>? datesLargestTempSpread;
+
+    protected override async Task OnInitializedAsync()
+    {
+        DataService dataService = new DataService();
+        string url = "https://raw.githubusercontent.com/BernyMP/fakeServer/main/db.json";
+        try
+        {
+            data = JsonSerializer.Deserialize<ClimatologicalData[]>(await dataService.GetJsonResponseAsync(url));
+            await calculateTempSpread();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }
+
+    private async Task calculateTempSpread()
+    {
+        SharedLogic<ClimatologicalData> doCalculations = new SharedLogic<ClimatologicalData>();
+        await doCalculations.calculateSpread(data, "Climate");
+        datesSmallestTempSpread = doCalculations.valsSmallestSpread;
+        datesLargestTempSpread = doCalculations.valsLargestSpread;
+    }
+
+    public static int calculateSpread(ClimatologicalData tempDate)
+    {
+        return tempDate.TempSpread;
+    }
+
+    public static List<ClimatologicalData> removeDates(List<ClimatologicalData> data, int largestTemp)
+    {
+        data.RemoveAll(a => a.TempSpread == largestTemp);
+        return data;
+    }
+    
+    
+}

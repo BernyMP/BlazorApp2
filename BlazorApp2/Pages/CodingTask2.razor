@@ -1,0 +1,201 @@
+@page "/codingTask2"
+@using BlazorApp2.Data;
+@using System.Text.Json
+<PageTitle>Coding Task #2</PageTitle>
+
+<div>
+    <h1>Coding Task #2</h1>
+    <p>
+        In this task we are going to calculate the difference in 'goals for' and 'goals against' for each club.
+        As well as finding the club with the smallest goal difference, and the club with the largest goal difference.
+    </p>
+    
+    <p>
+        I'm also going to to make the excel data into a json file and call an endpoint because why not.
+        <br/>I'm also going to display the Excel table.
+    </p>
+    <br/>
+</div>
+<br/>
+<div>
+    <h4>The Club(s) with the smallest goal difference: </h4>
+    @if (smallestGoalDiffList == null)
+    {
+        <p>
+            <em>Loading data...</em>
+        </p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Position</th>
+                <th>Club</th>
+                <th>Goals For</th>
+                <th>Goals Against</th>
+                <th>Goals Difference</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var club in smallestGoalDiffList)
+            {
+                <tr>
+                    <td>@club.Position</td>
+                    <td>@club.Club</td>
+                    <td>@club.GF</td>
+                    <td>@club.GA</td>
+                    <td>@club.GoalDifference</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+<br/>
+<div>
+    <h4>The Club(s) with the largest goal difference: </h4>
+    @if (largestGoalDiffList == null)
+    {
+        <p>
+            <em>Loading data...</em>
+        </p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Position</th>
+                <th>Club</th>
+                <th>Goals For</th>
+                <th>Goals Against</th>
+                <th>Goals Difference</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var club in largestGoalDiffList)
+            {
+                <tr>
+                    <td>@club.Position</td>
+                    <td>@club.Club</td>
+                    <td>@club.GF</td>
+                    <td>@club.GA</td>
+                    <td>@club.GoalDifference</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+<br/>
+<div>
+    <h4>Table from Excel: </h4>
+    @if (data == null)
+    {
+        <p>
+            <em>Loading data...</em>
+        </p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Position</th>
+                <th>Club</th>
+                <th>Played</th>
+                <th>Won</th>
+                <th>Drawn</th>
+                <th>Lost</th>
+                <th>GF</th>
+                <th>GA</th>
+                <th>Points</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var date in data)
+            {
+                <tr>
+                    <td>@date.Position</td>
+                    <td>@date.Club</td>
+                    <td>@date.Played</td>
+                    <td>@date.Won</td>
+                    <td>@date.Drawn</td>
+                    <td>@date.Lost</td>
+                    <td>@date.GF</td>
+                    <td>@date.GA</td>
+                    <td>@date.Points</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+
+@code {
+    private PremierClub[]? data;
+    private int smallestGoalDiff;
+    private int largestGoalDiff;
+    private List<PremierClub>? smallestGoalDiffList;
+    private List<PremierClub>? largestGoalDiffList;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        string url = "https://raw.githubusercontent.com/BernyMP/fakeServer/main/dbSoccer.json";
+        HttpClient httpClient = new HttpClient();
+        try
+        {
+            var httpResponseMessage = await httpClient.GetAsync(url);
+            string jsonResponse = await httpResponseMessage.Content.ReadAsStringAsync();
+            data = JsonSerializer.Deserialize<PremierClub[]>(jsonResponse);
+            await calculateGoalsDiff();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }
+
+    private async Task calculateGoalsDiff()
+    {
+        smallestGoalDiffList = new List<PremierClub>();
+        largestGoalDiffList = new List<PremierClub>();
+        
+        foreach (PremierClub club in data)
+        {
+            if (smallestGoalDiffList.Count() == 0 && smallestGoalDiffList.Count() == 0)
+            {
+                largestGoalDiffList.Add(club);
+                smallestGoalDiffList.Add(club);
+                largestGoalDiff = club.GoalDifference;
+                smallestGoalDiff = club.GoalDifference;
+            }
+            else
+            {
+                if (club.GoalDifference > largestGoalDiff)
+                {
+                    largestGoalDiffList.RemoveAll(a => a.GoalDifference == largestGoalDiff);
+                    largestGoalDiffList.Add(club);
+                    largestGoalDiff = club.GoalDifference;
+                }
+                else if (club.GoalDifference == largestGoalDiff)
+                {
+                    largestGoalDiffList.Add(club);
+                }
+
+                if (club.GoalDifference < smallestGoalDiff)
+                {
+                    smallestGoalDiffList.RemoveAll(a => a.GoalDifference == smallestGoalDiff);
+                    smallestGoalDiffList.Add(club);
+                    smallestGoalDiff = club.GoalDifference;
+                }
+                else if (club.GoalDifference == smallestGoalDiff)
+                {
+                    smallestGoalDiffList.Add(club);
+                }
+            }
+        }
+    }
+}
